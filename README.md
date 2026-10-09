@@ -65,8 +65,7 @@ event-platform/
 ├── Dockerfile                   # Сборка статики (Nginx)
 ├── CONTRIBUTING.md              # Правила веток и PR
 ├── README.md
-├── compose.yml
-└── git
+└── compose.yml
 ```
 
 ### Требования
