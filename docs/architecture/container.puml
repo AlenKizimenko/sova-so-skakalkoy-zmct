@@ -21,16 +21,26 @@ System_Boundary(platform, "event-platform") {
   Container(api_gateway, "API Gateway", "Nginx", "Маршрутизация запросов между фронтендом и сервисами")
 
   Container(extractor, "Extractor", "Python + FastAPI", "Извлекает дату, место, цену из текста анонса")
+Container(extractor_acl, "Extractor ACL", $tags="acl")
+Rel(extractor, extractor_acl, "")
 
   Container(page_composer, "Page Composer", "Python + FastAPI", "Собирает страницу мероприятия из блоков")
 
   Container(vk_publisher, "VK Publisher", "Python + FastAPI", "Форматирует и публикует посты в VK-группе эксперта")
+Container(vk_publisher_acl, "VK Publisher ACL", $tags="acl")
+Rel(vk_publisher, vk_publisher_acl, "")
 
   Container(mailer, "Mailer", "Python + FastAPI", "Отправляет email-рассылки")
+Container(mailer_acl, "Mailer ACL", $tags="acl")
+Rel(mailer, mailer_acl, "")
 
   ContainerDb(db, "База данных", "PostgreSQL", "Хранит экспертов, мероприятия, страницы, публикации, подписчиков")
+Container(db_repo, "Db Repo", $tags="repo")
+Rel(db_repo, db, "", "SQL")
 
   ContainerDb(cache, "Очередь", "Redis", "Очереди задач для рассылок и публикаций")
+Container(cache_repo, "Cache Repo", $tags="repo")
+Rel(cache_repo, cache, "", "Redis Protocol")
 }
 
 ' === Связи: пользователи ===
@@ -46,18 +56,18 @@ Rel(api_gateway, vk_publisher, "POST /publish", "HTTP")
 Rel(api_gateway, mailer, "POST /send", "HTTP")
 
 ' === Связи: сервисы → БД ===
-Rel(extractor, db, "Читает и пишет мероприятия", "SQL")
-Rel(page_composer, db, "Читает мероприятия и страницы", "SQL")
-Rel(vk_publisher, db, "Пишет статус публикации", "SQL")
-Rel(mailer, db, "Читает подписчиков, пишет статус рассылки", "SQL")
+Rel(extractor, db_repo, "Читает и пишет мероприятия", "SQL")
+Rel(page_composer, db_repo, "Читает мероприятия и страницы", "SQL")
+Rel(vk_publisher, db_repo, "Пишет статус публикации", "SQL")
+Rel(mailer, db_repo, "Читает подписчиков, пишет статус рассылки", "SQL")
 
 ' === Связи: сервисы → кеш/очередь ===
-Rel(mailer, cache, "Ставит задачи рассылки", "Redis Protocol")
-Rel(vk_publisher, cache, "Ставит задачи публикации", "Redis Protocol")
+Rel(mailer, cache_repo, "Ставит задачи рассылки", "Redis Protocol")
+Rel(vk_publisher, cache_repo, "Ставит задачи публикации", "Redis Protocol")
 
 ' === Связи: сервисы → внешние API ===
-Rel(extractor, llm, "Извлекает данные", "HTTPS/REST")
-Rel(vk_publisher, vk, "Публикует посты", "HTTPS/REST")
-Rel(mailer, smtp, "Отправляет письма", "SMTP")
+Rel(extractor_acl, llm, "Извлекает данные", "HTTPS/REST")
+Rel(vk_publisher_acl, vk, "Публикует посты", "HTTPS/REST")
+Rel(mailer_acl, smtp, "Отправляет письма", "SMTP")
 
 @enduml
