@@ -1,0 +1,77 @@
+@startuml
+!theme plain
+title event-platform — ERD
+
+entity "experts" as experts {
+  * id : UUID <<PK>>
+  --
+  email : VARCHAR(255) <<UNIQUE>>
+  name : VARCHAR(255)
+  bio : TEXT
+  avatar_url : VARCHAR(500)
+  vk_group_id : VARCHAR(100)
+  vk_access_token : TEXT
+  smtp_host : VARCHAR(255)
+  smtp_user : VARCHAR(255)
+  smtp_password : TEXT
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity "events" as events {
+  * id : UUID <<PK>>
+  --
+  expert_id : UUID <<FK>>
+  title : VARCHAR(255)
+  description : TEXT
+  raw_text : TEXT
+  date : TIMESTAMP
+  duration_minutes : INT
+  location_raw : VARCHAR(500)
+  location_resolved : VARCHAR(500)
+  is_online : BOOLEAN
+  price_amount : DECIMAL(10,2)
+  price_currency : VARCHAR(3)
+  price_for_members : DECIMAL(10,2)
+  status : VARCHAR(50)
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+entity "pages" as pages {
+  * id : UUID <<PK>>
+  --
+  event_id : UUID <<FK>>
+  blocks : JSONB
+  composer_version : VARCHAR(20)
+  composed_at : TIMESTAMP
+}
+
+entity "publications" as publications {
+  * id : UUID <<PK>>
+  --
+  event_id : UUID <<FK>>
+  channel : VARCHAR(50)
+  status : VARCHAR(50)
+  external_url : VARCHAR(500)
+  sent_count : INT
+  error_message : TEXT
+  published_at : TIMESTAMP
+}
+
+entity "subscribers" as subscribers {
+  * id : UUID <<PK>>
+  --
+  event_id : UUID <<FK>>
+  email : VARCHAR(255)
+  name : VARCHAR(255)
+  registered_at : TIMESTAMP
+}
+
+' === Связи ===
+experts ||--o{ events : "создаёт"
+events ||--|| pages : "имеет страницу"
+events ||--o{ publications : "публикуется в"
+events ||--o{ subscribers : "регистрации на"
+
+@enduml
