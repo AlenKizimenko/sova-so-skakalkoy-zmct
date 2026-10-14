@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  structure:
+    name: Repository structure
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check files and dirs
+        run: |
+          set -e
+          for f in README.md .gitignore .env.example compose.yml compose.dev.yml CONTRIBUTING.md; do
+            [ -f "$f" ] || { echo "[FAIL] Missing file: $f"; exit 1; }
+            echo "[OK] $f"
+          done
+          for d in apps services libs docs .github; do
+            [ -d "$d" ] || { echo "[FAIL] Missing dir: $d/"; exit 1; }
+            echo "[OK] $d/"
+          done
+
+  compose:
+    name: Compose config validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate default compose entrypoint
+        run: docker compose config --quiet
+        env:
+          POSTGRES_USER: event_platform
+          POSTGRES_PASSWORD: changeme
+          POSTGRES_DB: event_platform
+
+      - name: Validate compose.dev.yml
+        run: docker compose -f compose.dev.yml config --quiet
+        env:
+          POSTGRES_USER: event_platform
+          POSTGRES_PASSWORD: changeme
+          POSTGRES_DB: event_platform
+
+  docs:
+    name: Documentation checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          for f in README.md CONTRIBUTING.md; do
+            [ -s "$f" ] || { echo "[FAIL] $f is empty"; exit 1; }
+            echo "[OK] $f has content"
+          done
+
+  future-checks:
+    name: Future lint/format/test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Lint/format/test will be added when services get code"

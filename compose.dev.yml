@@ -1,0 +1,82 @@
+services:
+  # === База данных ===
+  db:
+    image: postgres:16-alpine
+    container_name: event_platform_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-event_platform}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-event_platform}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-event_platform}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # === Extractor (заглушка) ===
+  extractor:
+    image: alpine:3.19
+    container_name: event_platform_extractor
+    command: sh -c "echo '[extractor] placeholder running' && sleep infinity"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+
+  # === VK Publisher (заглушка) ===
+  vk-publisher:
+    image: alpine:3.19
+    container_name: event_platform_vk_publisher
+    command: sh -c "echo '[vk-publisher] placeholder running' && sleep infinity"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+
+  # === Mailer (заглушка) ===
+  mailer:
+    image: alpine:3.19
+    container_name: event_platform_mailer
+    command: sh -c "echo '[mailer] placeholder running' && sleep infinity"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+
+  # === Page Composer (заглушка) ===
+  page-composer:
+    image: alpine:3.19
+    container_name: event_platform_page_composer
+    command: sh -c "echo '[page-composer] placeholder running' && sleep infinity"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+
+  # === Frontend (заглушка) ===
+  site:
+    image: nginx:alpine
+    container_name: event_platform_site
+    ports:
+      - "8080:80"
+    volumes:
+      - ./apps/site/public:/usr/share/nginx/html:ro
+    env_file:
+      - path: .env
+        required: false
+
+volumes:
+  db_data:

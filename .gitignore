@@ -1,0 +1,51 @@
+﻿# === Секреты ===
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# === Node ===
+node_modules/
+dist/
+.next/
+.vite/
+.nuxt/
+*.tsbuildinfo
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*.iml
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === оги ===
+*.log
+logs/
+
+# === анные и временные файлы ===
+/data/
+*.sqlite
+*.db
+*.tmp
+*.bak
