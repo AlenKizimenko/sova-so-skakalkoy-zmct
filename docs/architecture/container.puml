@@ -1,0 +1,63 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title event-platform — Container-диаграмма (C4 L2)
+
+' === Люди ===
+Person(expert, "Эксперт", "Пишет промпт для создания карточки мероприятия")
+Person(visitor, "Посетитель", "Просматривает мероприятия и регистрируется")
+Person(admin, "Администратор", "Управляет платформой")
+
+' === Внешние системы ===
+System_Ext(vk, "VK API", "Публикация постов")
+System_Ext(smtp, "SMTP-сервер", "Отправка email")
+System_Ext(llm, "LLM API", "Извлечение данных из анонса")
+
+' === Границы системы ===
+System_Boundary(platform, "event-platform") {
+
+  Container(site, "Веб-приложение", "React + Vite", "Интерфейс эксперта, посетителя и админа. Форма анонса, дашборд, публичная страница мероприятия")
+
+  Container(api_gateway, "API Gateway", "Nginx", "Маршрутизация запросов между фронтендом и сервисами")
+
+  Container(extractor, "Extractor", "Python + FastAPI", "Извлекает дату, место, цену из текста анонса")
+
+  Container(page_composer, "Page Composer", "Python + FastAPI", "Собирает страницу мероприятия из блоков")
+
+  Container(vk_publisher, "VK Publisher", "Python + FastAPI", "Форматирует и публикует посты в VK-группе эксперта")
+
+  Container(mailer, "Mailer", "Python + FastAPI", "Отправляет email-рассылки")
+
+  ContainerDb(db, "База данных", "PostgreSQL", "Хранит экспертов, мероприятия, страницы, публикации, подписчиков")
+
+  ContainerDb(cache, "Очередь", "Redis", "Очереди задач для рассылок и публикаций")
+}
+
+' === Связи: пользователи ===
+Rel(expert, site, "Пишет анонс, управляет мероприятиями", "HTTPS")
+Rel(visitor, site, "Смотрит мероприятия, регистрируется", "HTTPS")
+Rel(admin, site, "Управляет платформой", "HTTPS")
+
+' === Связи: фронтенд → backend ===
+Rel(site, api_gateway, "API-запросы", "HTTPS/JSON")
+Rel(api_gateway, extractor, "POST /extract", "HTTP")
+Rel(api_gateway, page_composer, "POST /compose", "HTTP")
+Rel(api_gateway, vk_publisher, "POST /publish", "HTTP")
+Rel(api_gateway, mailer, "POST /send", "HTTP")
+
+' === Связи: сервисы → БД ===
+Rel(extractor, db, "Читает и пишет мероприятия", "SQL")
+Rel(page_composer, db, "Читает мероприятия и страницы", "SQL")
+Rel(vk_publisher, db, "Пишет статус публикации", "SQL")
+Rel(mailer, db, "Читает подписчиков, пишет статус рассылки", "SQL")
+
+' === Связи: сервисы → кеш/очередь ===
+Rel(mailer, cache, "Ставит задачи рассылки", "Redis Protocol")
+Rel(vk_publisher, cache, "Ставит задачи публикации", "Redis Protocol")
+
+' === Связи: сервисы → внешние API ===
+Rel(extractor, llm, "Извлекает данные", "HTTPS/REST")
+Rel(vk_publisher, vk, "Публикует посты", "HTTPS/REST")
+Rel(mailer, smtp, "Отправляет письма", "SMTP")
+
+@enduml
