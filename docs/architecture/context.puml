@@ -1,35 +1,35 @@
 @startuml
-!include httpsraw.githubusercontent.complantuml-stdlibC4-PlantUMLmasterC4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
 
 title event-platform — Контекстная диаграмма (C4 L1)
 
 ' === Люди ===
-Person(expert, Эксперт, Регистрируется, создаёт карточку-сайт, пишет промпт для создания анонса мероприятия)
-Person(visitor, Посетитель, Просматривает мероприятия и регистрируется на них, указывает почту)
-Person(admin, Администратор, Управляет платформой, модерирует контент)
+Person(expert, "Эксперт", "Регистрируется, создаёт карточку-сайт, пишет анонс мероприятия")
+Person(visitor, "Посетитель", "Просматривает мероприятия и регистрируется на них, указывает почту")
+Person(admin, "Администратор", "Управляет платформой, модерирует контент")
 
 ' === Система ===
-System(platform, event-platform, Платформа для публикации мероприятий карточка эксперта, страница мероприятия, регистрация, публикация в VK, email-рассылка)
+System(platform, "event-platform", "Платформа для публикации мероприятий: карточка эксперта, страница мероприятия, регистрация, публикация в VK, email-рассылка")
 
 ' === Внешние системы ===
-System_Ext(vk, VK API, Публикация постов в VK-группе эксперта)
-System_Ext(smtp, SMTP-сервер, Подтверждения и рассылки)
-System_Ext(llm, LLM API, Извлечение датыместацены из анонса)
+System_Ext(vk, "VK API", "Публикация постов в VK-группе эксперта")
+System_Ext(smtp, "SMTP-сервер", "Подтверждения и рассылки")
+System_Ext(llm, "LLM API", "Извлечение даты, места и цены из анонса")
 
-' === Связи эксперт ===
-Rel(expert, platform, Регистрируется, создаёт мероприятия, пишет промпт для анонса, HTTPS)
-Rel(platform, expert, Личный кабинет, статус публикаций, HTTPS)
+' === Связи: эксперт ===
+Rel(expert, platform, "Регистрируется, создаёт мероприятия, публикует анонс", "HTTPS")
+Rel(platform, expert, "Личный кабинет, статус публикаций", "HTTPS")
 
-' === Связи посетитель ===
-Rel(visitor, platform, Просматривает мероприятия, регистрируется, оставляет почту, HTTPS)
-Rel(platform, visitor, Подтверждение регистрации, Email)
+' === Связи: посетитель ===
+Rel(visitor, platform, "Просматривает мероприятия, регистрируется, оставляет почту", "HTTPS")
+Rel(platform, visitor, "Подтверждение регистрации", "Email")
 
-' === Связи администратор ===
-Rel(admin, platform, Управляет, модерирует, HTTPS)
+' === Связи: администратор ===
+Rel(admin, platform, "Управляет, модерирует", "HTTPS")
 
-' === Связи внешние системы ===
-Rel(platform, vk, Публикует пост, HTTPSREST)
-Rel(platform, smtp, Отправляет письма, SMTP)
-Rel(platform, llm, Извлекает данные из анонса, HTTPSREST)
+' === Связи: внешние системы ===
+Rel(platform, vk, "Публикует пост", "HTTPS/REST")
+Rel(platform, smtp, "Отправляет письма", "SMTP")
+Rel(platform, llm, "Извлекает данные из анонса", "HTTPS/REST")
 
 @enduml
