@@ -12,71 +12,127 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks:
+      - backend-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-event_platform}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # === Redis (кеш и очередь) ===
+  redis:
+    image: redis:7-alpine
+    container_name: event_platform_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # === API Gateway (Nginx) ===
+  api-gateway:
+    image: nginx:alpine
+    container_name: event_platform_api_gateway
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    networks:
+      - frontend-net
+      - backend-net
+    depends_on:
+      - extractor
+      - page-composer
+      - vk-publisher
+      - mailer
+
   # === Extractor (заглушка) ===
   extractor:
     image: alpine:3.19
     container_name: event_platform_extractor
     command: sh -c "echo '[extractor] placeholder running' && sleep infinity"
-    depends_on:
-      db:
-        condition: service_healthy
     env_file:
       - path: .env
         required: false
+    networks:
+      - backend-net
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   # === VK Publisher (заглушка) ===
   vk-publisher:
     image: alpine:3.19
     container_name: event_platform_vk_publisher
     command: sh -c "echo '[vk-publisher] placeholder running' && sleep infinity"
-    depends_on:
-      db:
-        condition: service_healthy
     env_file:
       - path: .env
         required: false
+    networks:
+      - backend-net
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   # === Mailer (заглушка) ===
   mailer:
     image: alpine:3.19
     container_name: event_platform_mailer
     command: sh -c "echo '[mailer] placeholder running' && sleep infinity"
-    depends_on:
-      db:
-        condition: service_healthy
     env_file:
       - path: .env
         required: false
+    networks:
+      - backend-net
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   # === Page Composer (заглушка) ===
   page-composer:
     image: alpine:3.19
     container_name: event_platform_page_composer
     command: sh -c "echo '[page-composer] placeholder running' && sleep infinity"
-    depends_on:
-      db:
-        condition: service_healthy
     env_file:
       - path: .env
         required: false
+    networks:
+      - backend-net
+    depends_on:
+      db:
+        condition: service_healthy
 
   # === Frontend (заглушка) ===
   site:
     image: nginx:alpine
     container_name: event_platform_site
+    restart: unless-stopped
     ports:
       - "8080:80"
     volumes:
       - ./apps/site/public:/usr/share/nginx/html:ro
-    env_file:
-      - path: .env
-        required: false
+    networks:
+      - frontend-net
+
+networks:
+  frontend-net:
+    driver: bridge
+  backend-net:
+    driver: bridge
 
 volumes:
   db_data:
+  redis_data:
