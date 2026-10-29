@@ -315,4 +315,4 @@ class Baseline:
                     intro = ""
             contents.append(render(event, platform, intro))
         return dict(contents=contents, issues=issues, usage=merge_usage(usages),
-                    mode="standard" if preferred_mode == "standard" else "template")
+                    mode="standard" if preferred_mode == "standard" and not issues else "template")
