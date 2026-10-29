@@ -1,0 +1,53 @@
+{
+  "dataset": "docs\\quality\\golden-dataset\\v2.jsonl",
+  "dataset_sha256": "3c30554a8f49fb4bf0f34ec86d916429556bed7d733d4a2b86718349e566d8af",
+  "model": "qwen2.5:3b",
+  "provider": "ollama",
+  "repeats": 3,
+  "split": "all",
+  "generate": false,
+  "records": 159,
+  "prompt_version": "lab3-v1",
+  "rag": false,
+  "search_metrics": null,
+  "search_reason": "No retrieval in the pipeline",
+  "timestamp": "2026-10-29T13:49:03.570712+00:00",
+  "revision": "179ca4c5780b8efb442f96c2b22b5a4d6a51d848",
+  "timeout_seconds": 120.0,
+  "deadline_seconds": 245.0,
+  "runtime": {
+    "version": {
+      "version": "0.40.13"
+    },
+    "models": {
+      "models": [
+        {
+          "name": "qwen2.5:3b",
+          "model": "qwen2.5:3b",
+          "modified_at": "2026-10-29T16:18:48.2646852+03:00",
+          "size": 1929912432,
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "3.1B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 32768,
+            "embedding_length": 2048,
+            "runner": "ggml"
+          },
+          "capabilities": [
+            "completion",
+            "tools"
+          ]
+        }
+      ]
+    }
+  },
+  "working_tree_dirty": true,
+  "baseline_source_sha256": "4b6f48feaad5d1a139099ca30991e1a468b4e7cf79442432ffb359d795c4ad1c"
+}
