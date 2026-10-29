@@ -10,6 +10,7 @@ def main():
     p = parser()
     p.add_argument("--gate", help="Versioned explicit thresholds JSON; absence means report only")
     p.add_argument("--from-results", help="Recalculate metrics from an existing live requests.jsonl, no model call")
+    p.add_argument("--reviews", help="Human checklist CSV with output fingerprints; never auto-filled")
     args = p.parse_args()
     if args.from_results:
         rows = [json.loads(x) for x in Path(args.from_results).read_text(encoding="utf-8").splitlines() if x.strip()]
@@ -18,6 +19,9 @@ def main():
     if not rows:
         raise SystemExit("No eval observations")
     metrics = calculate(rows)
+    if args.reviews:
+        from tests.evals.review import score_reviews
+        metrics.update(score_reviews(rows, args.reviews))
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
     errors = check_gates(metrics, json.loads(Path(args.gate).read_text(encoding="utf-8"))) if args.gate else []

@@ -5,6 +5,15 @@ on:
     branches: [main]
   push:
     branches: [feature/quality_lab3]
+    paths:
+      - 'ml/**'
+      - 'backend/**'
+      - 'api/**'
+      - 'tests/**'
+      - 'docs/quality/golden-dataset/**'
+      - 'requirements-ai.txt'
+      - 'pytest.ini'
+      - '.github/workflows/evals.yml'
   workflow_dispatch:
 
 permissions:

@@ -19,6 +19,18 @@ python -m tests.evals.run --dataset docs/quality/golden-dataset/ci.jsonl --split
 `--gate tests/evals/thresholds.json` включает пороги; нарушение = exit code 1.
 Без `--gate` запуск только измеряет. CI всегда передаёт `--gate`.
 Для пересчёта без API использовать `--from-results <requests.jsonl>`.
+Для M4/M5 создать таблицу ручной оценки:
+
+```sh
+python -m tests.evals.review --results docs/quality/reports/lab3-mini/requests.jsonl --output docs/quality/reports/manual-review.csv
+```
+
+Человек размечает edit_free / has_hallucination (0/1), имя reviewer и reason по
+чек-листу карты качества. Затем пересчитать через `tests.evals.run --from-results ...
+--reviews docs/quality/reports/manual-review.csv --output ...`. Код сверяет SHA-256
+черновика и отклоняет пустые, дублирующиеся и устаревшие оценки. Без человека
+эти числа остаются null. Некалиброванный LLM judge не подменяет человека.
+
 Artifacts: requests.jsonl (каждый ответ и usage), usage.csv, run.json (хэш датасета,
 модель/digest/runtime/параметры), metrics.json (доли, знаменатели, Wilson 95%).
 
