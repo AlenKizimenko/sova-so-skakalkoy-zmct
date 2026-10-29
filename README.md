@@ -1,5 +1,12 @@
 # event-platform
 
+В ветке лабораторной 3 реализован локальный AI baseline на Qwen 2.5 3B:
+FastAPI, Structured Outputs, ограниченные повторы и OpenTelemetry-трассировка.
+Запуск: [lab3-setup](docs/experiments/lab3-setup.md).
+Выбор локальной модели: [ADR-006](docs/adr/006-local-baseline-lab3.md).
+Материалы незамерженной лабы 2 включены в ветку как зависимости.
+Ветка `feature/quality_lab3` добавляет evals, CI и golden dataset v2 поверх AI-кода.
+
 [![CI](https://github.com/vstu-sii/sova-so-skakalkoy-zmct/actions/workflows/ci.yml/badge.svg)](https://github.com/vstu-sii/sova-so-skakalkoy-zmct/actions/workflows/ci.yml)
 
 Платформа для экспертов: один анонс — сайт мероприятия + пост во ВК + email-рассылка.

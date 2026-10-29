@@ -168,7 +168,7 @@ class Baseline:
             await self.http.aclose()
 
     async def call(self, stage, system, payload, schema):
-        messages = [{"role": "system", "content": system},
+        messages = [{"role": "system", "content": system + "\nJSON Schema: " + json.dumps(schema, ensure_ascii=False)},
                     {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}]
         # Include schema and overhead in context limit. Ollama independently enforces num_ctx.
         if self.provider == "openai":
@@ -180,7 +180,7 @@ class Baseline:
         for attempt in (1, 2):
             with tracer.start_as_current_span(stage, record_exception=False, set_status_on_exception=False) as span:
                 span.set_attributes({"model": self.model, "provider": self.provider,
-                    "attempt": attempt, "prompt_version": PROMPT_VERSION})
+                    "attempt": attempt, "prompt_version": PROMPT_VERSION, "schema_version": "api-0.2.0"})
                 if capture_content():
                     span.set_attribute("prompt", json.dumps(messages, ensure_ascii=False))
                 try:
@@ -191,7 +191,8 @@ class Baseline:
                         raw, usage = await self._request(messages, schema)
                     usages.append(usage)
                     span.set_attributes({"input_tokens": usage["input_tokens"],
-                                         "output_tokens": usage["output_tokens"]})
+                                         "output_tokens": usage["output_tokens"], "cost_rub": usage["cost_rub"],
+                                         "price_version": usage["price_version"]})
                     if capture_content():
                         span.set_attribute("response", raw or "")
                     if not raw:
