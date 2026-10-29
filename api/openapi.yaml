@@ -1,0 +1,1764 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Event announcements AI API",
+    "version": "0.2.0",
+    "description": "Proposed Lab 2 contract; not implemented and not yet approved by Delivery. JSON representation is valid YAML 1.2. Auth, ownership, version CAS, budget and idempotency enforced by server. API does not publish. Raw source is untrusted data."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Planned local development service; no live deployment implied."
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "AI"
+    },
+    {
+      "name": "Delivery"
+    }
+  ],
+  "paths": {
+    "/v1/ai/extractions": {
+      "post": {
+        "operationId": "extractEvent",
+        "summary": "Extract a new draft",
+        "description": "Creates draft v1 and proposal; no publication. Unknown facts return 200 with blocking issues/questions. reference_date is explicit. At most 60s overall deadline; model unavailable can return manual draft.",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Owner-scoped exact operation retry key, retained 24h. Same key/path/body returns same resource result with current request_id and no new model call; changed body returns 409. Reserve key atomically before provider call."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractionRequest"
+              },
+              "example": {
+                "text": "15 ноября 2026 в 19:00 обсуждаем тревогу у подростков. Пространство «Точка», Пушкина 12. 2500 рублей, для своих 2000. Запись в личные сообщения.",
+                "reference_date": "2026-10-14",
+                "timezone": "Europe/Moscow"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success; may contain needs_clarification/manual status, see schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractionResponse"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "event_id": "11111111-1111-4111-8111-111111111111",
+                  "event_version": 1,
+                  "mode": "standard",
+                  "candidate": {
+                    "candidate_id": "11111111-1111-4111-8111-111111111111",
+                    "base_version": 1,
+                    "event": {
+                      "title": "Встреча о тревоге у подростков",
+                      "description": "Обсудим тревогу у подростков.",
+                      "date_start": "2026-11-15",
+                      "date_end": null,
+                      "time_start": "19:00",
+                      "venue": "Пространство «Точка», Пушкина 12",
+                      "price": 2500,
+                      "price_discount": 2000,
+                      "registration": "Запись в личные сообщения эксперта"
+                    },
+                    "changes": [],
+                    "issues": [],
+                    "status": "awaiting_confirmation"
+                  },
+                  "usage": {
+                    "input_tokens": 1200,
+                    "output_tokens": 350,
+                    "cost_usd": 0.00039,
+                    "cost_rub": 0.03315,
+                    "fx_rate": 85,
+                    "price_version": "2026-10-14-standard",
+                    "cache_hit": false,
+                    "model_ids": [
+                      "gpt-4o-mini-2024-07-18"
+                    ],
+                    "attempts": 1
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Matches request_id in body."
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "UNAUTHENTICATED",
+                  "message": "Unauthenticated",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version mismatch, candidate expired or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "CONFLICT",
+                  "message": "Version mismatch, candidate expired or idempotency conflict",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Input too long",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "PAYLOAD_TOO_LARGE",
+                  "message": "Input too long",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request or card cannot be processed/confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "VALIDATION_ERROR",
+                  "message": "Request or card cannot be processed/confirmed",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit or budget exceeded; no unreserved model call",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "BUDGET_EXCEEDED",
+                  "message": "Rate limit or budget exceeded; no unreserved model call",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until retry where applicable; billing exhaustion may need user action.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Model refusal, invalid or truncated response after bounded attempts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "MODEL_ERROR",
+                  "message": "Model refusal, invalid or truncated response after bounded attempts",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Model unavailable and no fallback can produce a usable result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "MODEL_UNAVAILABLE",
+                  "message": "Model unavailable and no fallback can produce a usable result",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Operation deadline exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "DEADLINE_EXCEEDED",
+                  "message": "Operation deadline exceeded",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/events/{event_id}/ai/patches": {
+      "post": {
+        "operationId": "proposePatch",
+        "summary": "Propose changes without overwriting confirmed event",
+        "description": "Load caller-owned event and compare expected_version before model call. Recheck atomically when storing candidate. Unmentioned fields survive. Return merged candidate and evidence; does not commit.",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Owner-scoped exact operation retry key, retained 24h. Same key/path/body returns same resource result with current request_id and no new model call; changed body returns 409. Reserve key atomically before provider call."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchRequest"
+              },
+              "example": {
+                "text": "Переносим на 16 ноября 2026, 15:00. Место и цена те же.",
+                "expected_version": 2,
+                "reference_date": "2026-10-14",
+                "timezone": "Europe/Moscow"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success; may contain needs_clarification/manual status, see schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchResponse"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "event_id": "11111111-1111-4111-8111-111111111111",
+                  "mode": "standard",
+                  "candidate": {
+                    "candidate_id": "11111111-1111-4111-8111-111111111111",
+                    "base_version": 2,
+                    "event": {
+                      "title": "Встреча о тревоге у подростков",
+                      "description": "Обсудим тревогу у подростков.",
+                      "date_start": "2026-11-16",
+                      "date_end": null,
+                      "time_start": "15:00",
+                      "venue": "Пространство «Точка», Пушкина 12",
+                      "price": 2500,
+                      "price_discount": 2000,
+                      "registration": "Запись в личные сообщения эксперта"
+                    },
+                    "changes": [
+                      {
+                        "field": "date_start",
+                        "operation": "set",
+                        "value": "2026-11-16",
+                        "evidence": "16 ноября 2026"
+                      },
+                      {
+                        "field": "time_start",
+                        "operation": "set",
+                        "value": "15:00",
+                        "evidence": "15:00"
+                      }
+                    ],
+                    "issues": [],
+                    "status": "awaiting_confirmation"
+                  },
+                  "usage": {
+                    "input_tokens": 1600,
+                    "output_tokens": 350,
+                    "cost_usd": 0.00045,
+                    "cost_rub": 0.03825,
+                    "fx_rate": 85,
+                    "price_version": "2026-10-14-standard",
+                    "cache_hit": false,
+                    "model_ids": [
+                      "gpt-4o-mini-2024-07-18"
+                    ],
+                    "attempts": 1
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Matches request_id in body."
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "UNAUTHENTICATED",
+                  "message": "Unauthenticated",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Event/candidate not found or not owned by caller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "NOT_FOUND",
+                  "message": "Event/candidate not found or not owned by caller",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version mismatch, candidate expired or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "CONFLICT",
+                  "message": "Version mismatch, candidate expired or idempotency conflict",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Input too long",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "PAYLOAD_TOO_LARGE",
+                  "message": "Input too long",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request or card cannot be processed/confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "VALIDATION_ERROR",
+                  "message": "Request or card cannot be processed/confirmed",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit or budget exceeded; no unreserved model call",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "BUDGET_EXCEEDED",
+                  "message": "Rate limit or budget exceeded; no unreserved model call",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until retry where applicable; billing exhaustion may need user action.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Model refusal, invalid or truncated response after bounded attempts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "MODEL_ERROR",
+                  "message": "Model refusal, invalid or truncated response after bounded attempts",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Model unavailable and no fallback can produce a usable result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "MODEL_UNAVAILABLE",
+                  "message": "Model unavailable and no fallback can produce a usable result",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Operation deadline exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "DEADLINE_EXCEEDED",
+                  "message": "Operation deadline exceeded",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/events/{event_id}/confirm": {
+      "post": {
+        "operationId": "confirmCandidate",
+        "summary": "Confirm a reviewed candidate",
+        "description": "No model call. Check owner, candidate/event relation, expiry, candidate.base_version and expected_version against stored version, and absence of blocking issues. Atomically commit and increment version; invalidate older content. Unclear candidate returns 422. Confirmation uses same validation gates for initial draft and patches.",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Owner-scoped exact operation retry key, retained 24h. Same key/path/body returns same resource result with current request_id and no new model call; changed body returns 409. Reserve key atomically before provider call."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmRequest"
+              },
+              "example": {
+                "candidate_id": "11111111-1111-4111-8111-111111111111",
+                "expected_version": 2
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success; may contain needs_clarification/manual status, see schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRecord"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "event_id": "11111111-1111-4111-8111-111111111111",
+                  "version": 3,
+                  "status": "confirmed",
+                  "event": {
+                    "title": "Встреча о тревоге у подростков",
+                    "description": "Обсудим тревогу у подростков.",
+                    "date_start": "2026-11-16",
+                    "date_end": null,
+                    "time_start": "15:00",
+                    "venue": "Пространство «Точка», Пушкина 12",
+                    "price": 2500,
+                    "price_discount": 2000,
+                    "registration": "Запись в личные сообщения эксперта"
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Matches request_id in body."
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "UNAUTHENTICATED",
+                  "message": "Unauthenticated",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Event/candidate not found or not owned by caller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "NOT_FOUND",
+                  "message": "Event/candidate not found or not owned by caller",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version mismatch, candidate expired or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "CONFLICT",
+                  "message": "Version mismatch, candidate expired or idempotency conflict",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request or card cannot be processed/confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "VALIDATION_ERROR",
+                  "message": "Request or card cannot be processed/confirmed",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/events/{event_id}/ai/generations": {
+      "post": {
+        "operationId": "generateContent",
+        "summary": "Generate drafts from a confirmed version",
+        "description": "Require confirmed non-blocking event and exact version. Reject stale version with 409. Read a versioned snapshot; if current version changes during generation, discard output and return 409. Return all requested platforms or error, never partial success. Budget reservations shared across calls/retries; server may return economy/template mode. Human reviews all texts.",
+        "tags": [
+          "AI"
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Owner-scoped exact operation retry key, retained 24h. Same key/path/body returns same resource result with current request_id and no new model call; changed body returns 409. Reserve key atomically before provider call."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateRequest"
+              },
+              "example": {
+                "expected_version": 3,
+                "platforms": [
+                  "vk",
+                  "email",
+                  "site"
+                ],
+                "tone": "Дружелюбно, без новых обещаний.",
+                "preferred_mode": "standard"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success; may contain needs_clarification/manual status, see schema.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateResponse"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "event_id": "11111111-1111-4111-8111-111111111111",
+                  "event_version": 3,
+                  "status": "draft_content",
+                  "mode": "template",
+                  "contents": [
+                    {
+                      "platform": "vk",
+                      "headline": "Встреча о тревоге у подростков",
+                      "snippet": "16 ноября в 15:00 — встреча о тревоге у подростков.",
+                      "body": "Встреча о тревоге у подростков. 16.11.2026, 15:00. Пространство «Точка», Пушкина 12. 2500 ₽, для своих 2000 ₽. Запись в личные сообщения эксперта."
+                    },
+                    {
+                      "platform": "email",
+                      "subject": "Встреча о тревоге у подростков",
+                      "preheader": "Встреча 16 ноября в 15:00",
+                      "body": "Обсудим тревогу у подростков. 16.11.2026, 15:00. Пространство «Точка», Пушкина 12. 2500 ₽, льготная цена 2000 ₽. Запись в личные сообщения эксперта."
+                    },
+                    {
+                      "platform": "site",
+                      "markdown": "# Встреча о тревоге у подростков\n\n16.11.2026, 15:00.\n\nПространство «Точка», Пушкина 12.\n\n2500 ₽, льготная цена 2000 ₽.\n\nОбсудим тревогу у подростков.\n\nЗапись в личные сообщения эксперта."
+                    }
+                  ],
+                  "issues": [],
+                  "usage": {
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "cost_usd": 0,
+                    "cost_rub": 0,
+                    "fx_rate": 85,
+                    "price_version": "2026-10-14-standard",
+                    "cache_hit": false,
+                    "model_ids": [],
+                    "attempts": 0
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Matches request_id in body."
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "UNAUTHENTICATED",
+                  "message": "Unauthenticated",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Event/candidate not found or not owned by caller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "NOT_FOUND",
+                  "message": "Event/candidate not found or not owned by caller",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version mismatch, candidate expired or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "CONFLICT",
+                  "message": "Version mismatch, candidate expired or idempotency conflict",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Input too long",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "PAYLOAD_TOO_LARGE",
+                  "message": "Input too long",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request or card cannot be processed/confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "VALIDATION_ERROR",
+                  "message": "Request or card cannot be processed/confirmed",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit or budget exceeded; no unreserved model call",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "BUDGET_EXCEEDED",
+                  "message": "Rate limit or budget exceeded; no unreserved model call",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until retry where applicable; billing exhaustion may need user action.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Model refusal, invalid or truncated response after bounded attempts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "MODEL_ERROR",
+                  "message": "Model refusal, invalid or truncated response after bounded attempts",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Model unavailable and no fallback can produce a usable result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "MODEL_UNAVAILABLE",
+                  "message": "Model unavailable and no fallback can produce a usable result",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Operation deadline exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "DEADLINE_EXCEEDED",
+                  "message": "Operation deadline exceeded",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/events/{event_id}": {
+      "get": {
+        "operationId": "getEvent",
+        "summary": "Read current caller-owned event",
+        "tags": [
+          "Delivery"
+        ],
+        "parameters": [
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current event; this does not accept a candidate.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRecord"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "event_id": "11111111-1111-4111-8111-111111111111",
+                  "version": 3,
+                  "status": "confirmed",
+                  "event": {
+                    "title": "Встреча о тревоге у подростков",
+                    "description": "Обсудим тревогу у подростков.",
+                    "date_start": "2026-11-16",
+                    "date_end": null,
+                    "time_start": "15:00",
+                    "venue": "Пространство «Точка», Пушкина 12",
+                    "price": 2500,
+                    "price_discount": 2000,
+                    "registration": "Запись в личные сообщения эксперта"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "UNAUTHENTICATED",
+                  "message": "Unauthenticated",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or not owned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "request_id": "11111111-1111-4111-8111-111111111111",
+                  "code": "NOT_FOUND",
+                  "message": "Event/candidate not found or not owned by caller",
+                  "issues": [],
+                  "retryable": false
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Event": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 100
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          },
+          "date_start": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "date_end": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "time_start": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "venue": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500
+          },
+          "price": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "price_discount": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "registration": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "date_start",
+          "date_end",
+          "time_start",
+          "venue",
+          "price",
+          "price_discount",
+          "registration"
+        ],
+        "description": "All keys required; null means unknown. Confirmation requires non-null title, description, date_start, time_start, venue, price, registration. date_end/price_discount may remain null. No implicit city/year inference."
+      },
+      "Issue": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "MISSING_FIELD",
+              "DATE_CONFLICT",
+              "PAST_DATE",
+              "INVALID_DATE",
+              "END_BEFORE_START",
+              "PRICE_CONFLICT",
+              "INCOMPLETE_VENUE",
+              "INVALID_PATCH",
+              "EVIDENCE_MISMATCH",
+              "CONTENT_REVIEW"
+            ]
+          },
+          "field": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "question": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500
+          },
+          "evidence": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
+          },
+          "blocking": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "field",
+          "message",
+          "question",
+          "evidence",
+          "blocking"
+        ]
+      },
+      "Change": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "title",
+              "description",
+              "date_start",
+              "date_end",
+              "time_start",
+              "venue",
+              "price",
+              "price_discount",
+              "registration"
+            ]
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "set",
+              "clear"
+            ]
+          },
+          "value": {
+            "type": [
+              "string",
+              "number",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "field",
+          "operation",
+          "value",
+          "evidence"
+        ],
+        "description": "Server validates field-specific type, non-null set, null clear, explicit evidence and no duplicate fields. Omitted field is unchanged; clear of required fact prevents confirmation."
+      },
+      "Usage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "input_tokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "output_tokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cost_usd": {
+            "type": "number",
+            "minimum": 0
+          },
+          "cost_rub": {
+            "type": "number",
+            "minimum": 0
+          },
+          "fx_rate": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "price_version": {
+            "type": "string"
+          },
+          "cache_hit": {
+            "type": "boolean"
+          },
+          "model_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "attempts": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "input_tokens",
+          "output_tokens",
+          "cost_usd",
+          "cost_rub",
+          "fx_rate",
+          "price_version",
+          "cache_hit",
+          "model_ids",
+          "attempts"
+        ],
+        "description": "Per HTTP operation, including billable retries. Unknown usage yields error/reconciliation, never fictitious zero. manual/template/cache have zero new model tokens."
+      },
+      "Candidate": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "base_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "event": {
+            "$ref": "#/components/schemas/Event"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Change"
+            }
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "needs_clarification",
+              "awaiting_confirmation"
+            ]
+          }
+        },
+        "required": [
+          "candidate_id",
+          "base_version",
+          "event",
+          "changes",
+          "issues",
+          "status"
+        ],
+        "description": "Server-owned status. needs_clarification iff any issue is blocking. Initial extraction has changes=[]. Candidate expires after 24h; confirming expired candidate is 409."
+      },
+      "ExtractionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 12000
+          },
+          "reference_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Valid IANA zone, e.g. Europe/Moscow; checked by backend."
+          }
+        },
+        "required": [
+          "text",
+          "reference_date",
+          "timezone"
+        ]
+      },
+      "ExtractionResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_version": {
+            "type": "integer",
+            "const": 1
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "economy",
+              "manual"
+            ]
+          },
+          "candidate": {
+            "$ref": "#/components/schemas/Candidate"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "required": [
+          "request_id",
+          "event_id",
+          "event_version",
+          "mode",
+          "candidate",
+          "usage"
+        ],
+        "description": "Creates owner-scoped draft v1, never publishes. manual returns a candidate with unknown facts/issues for UI editing."
+      },
+      "PatchRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 12000
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "reference_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "text",
+          "expected_version",
+          "reference_date",
+          "timezone"
+        ]
+      },
+      "PatchResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "economy",
+              "manual"
+            ]
+          },
+          "candidate": {
+            "$ref": "#/components/schemas/Candidate"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "required": [
+          "request_id",
+          "event_id",
+          "mode",
+          "candidate",
+          "usage"
+        ],
+        "description": "Proposal only; confirmed event unchanged. Manual candidate carries blocking issues until corrected text is resubmitted."
+      },
+      "ConfirmRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "candidate_id",
+          "expected_version"
+        ]
+      },
+      "EventRecord": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "confirmed"
+            ]
+          },
+          "event": {
+            "$ref": "#/components/schemas/Event"
+          }
+        },
+        "required": [
+          "request_id",
+          "event_id",
+          "version",
+          "status",
+          "event"
+        ]
+      },
+      "GenerateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "platforms": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "vk",
+                "email",
+                "site"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 3,
+            "uniqueItems": true
+          },
+          "tone": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "preferred_mode": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "economy"
+            ]
+          }
+        },
+        "required": [
+          "expected_version",
+          "platforms",
+          "tone",
+          "preferred_mode"
+        ],
+        "description": "Server loads confirmed event. Client cannot supply arbitrary event to bypass confirmation. requested mode is a preference; actual mode returned."
+      },
+      "VkContent": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "platform": {
+            "type": "string",
+            "const": "vk"
+          },
+          "headline": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "snippet": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "platform",
+          "headline",
+          "snippet",
+          "body"
+        ]
+      },
+      "EmailContent": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "platform": {
+            "type": "string",
+            "const": "email"
+          },
+          "subject": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "preheader": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 8000
+          }
+        },
+        "required": [
+          "platform",
+          "subject",
+          "preheader",
+          "body"
+        ]
+      },
+      "SiteContent": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "platform": {
+            "type": "string",
+            "const": "site"
+          },
+          "markdown": {
+            "type": "string",
+            "maxLength": 12000
+          }
+        },
+        "required": [
+          "platform",
+          "markdown"
+        ]
+      },
+      "GenerateResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "const": "draft_content"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "economy",
+              "template"
+            ]
+          },
+          "contents": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/VkContent"
+                },
+                {
+                  "$ref": "#/components/schemas/EmailContent"
+                },
+                {
+                  "$ref": "#/components/schemas/SiteContent"
+                }
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 3
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          }
+        },
+        "required": [
+          "request_id",
+          "event_id",
+          "event_version",
+          "status",
+          "mode",
+          "contents",
+          "issues",
+          "usage"
+        ],
+        "description": "Exactly one item for every requested platform, no extras/duplicates (backend invariant). Fields are final server-rendered drafts. Human review required; no publication."
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "UNAUTHENTICATED",
+              "NOT_FOUND",
+              "CONFLICT",
+              "PAYLOAD_TOO_LARGE",
+              "VALIDATION_ERROR",
+              "BUDGET_EXCEEDED",
+              "RATE_LIMITED",
+              "MODEL_ERROR",
+              "MODEL_UNAVAILABLE",
+              "DEADLINE_EXCEEDED"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "request_id",
+          "code",
+          "message",
+          "issues",
+          "retryable"
+        ]
+      }
+    }
+  }
+}
