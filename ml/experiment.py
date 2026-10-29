@@ -44,11 +44,11 @@ async def run(args):
                     expected, fields = expected_projection(row)
                     result = dict(id=row["id"], repeat=repeat, expected=expected, assert_fields=fields,
                         tags=row.get("tags", []), split=row.get("split"), attack=row.get("attack"),
-                        status="error", model=model.model, prompt_version="lab3-v1")
+                        status="error", usage_complete=False, model=model.model, prompt_version="lab3-v1")
                     with tracer.start_as_current_span("experiment-request"):
                         try:
                             extraction = await model.extract(**model_input(row))
-                            result.update(status="ok", **extraction)
+                            result.update(status="ok", usage_complete=True, **extraction)
                             result["extraction_latency_ms"] = (time.perf_counter() - started) * 1000
                             # Generate drafts for every successful extraction, including incomplete
                             # cards: an explicit offline experiment, never the confirmed-only API.
@@ -57,7 +57,8 @@ async def run(args):
                                 result["generation"] = generation
                                 result["usage"] = merge_usage([extraction["usage"], generation["usage"]])
                         except ModelError as exc:
-                            result.update(status="error", error_code=exc.code, failed_attempt_usage=exc.usage)
+                            result.update(status="error", usage_complete=False, error_code=exc.code,
+                                          failed_attempt_usage=exc.usage)
                         result["latency_ms"] = (time.perf_counter() - started) * 1000
                     stream.write(json.dumps(result, ensure_ascii=False) + "\n")
                     stream.flush()
@@ -66,7 +67,7 @@ async def run(args):
     finally:
         await model.close()
     with (out / "usage.csv").open("w", newline="", encoding="utf-8") as stream:
-        fields = ["id", "repeat", "status", "latency_ms", "input_tokens", "output_tokens", "cost_rub", "attempts"]
+        fields = ["id", "repeat", "status", "usage_complete", "latency_ms", "input_tokens", "output_tokens", "cost_rub", "attempts"]
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
         for r in results:

@@ -54,6 +54,30 @@ def issue(code, field, message, evidence=None):
                 evidence=evidence, blocking=True)
 
 
+def calendar_conflicts(text, reference_date):
+    """Conservative deterministic check of an explicit date + adjacent weekday.
+
+    Does not resolve all natural language dates or force a guessed date into Event.
+    """
+    months = {m: i + 1 for i, m in enumerate(("января", "февраля", "марта", "апреля", "мая", "июня",
+        "июля", "августа", "сентября", "октября", "ноября", "декабря"))}
+    weekdays = {"понедельник": 0, "вторник": 1, "среда": 2, "среду": 2,
+                "четверг": 3, "пятница": 4, "пятницу": 4, "суббота": 5,
+                "субботу": 5, "воскресенье": 6}
+    pattern = r"(?<!\d)(\d{1,2})\s+(" + "|".join(months) + r")(?:\s+(20\d{2}))?\s*[,—–-]?\s*(?:в\s+)?(" + "|".join(weekdays) + r")\b"
+    result = []
+    for match in re.finditer(pattern, text, re.I):
+        day, month, year, weekday = match.groups()
+        try:
+            actual = date(int(year or reference_date[:4]), months[month.lower()], int(day))
+        except ValueError:
+            result.append(issue("INVALID_DATE", "date_start", "Уточните календарную дату", match.group()))
+            continue
+        if actual.weekday() != weekdays[weekday.lower()]:
+            result.append(issue("DATE_CONFLICT", "date_start", "Число и день недели не совпадают; уточните дату", match.group()))
+    return result
+
+
 def check_event(event, reference_date, issues=()):
     validate("Event", event)
     result = list(issues)
@@ -238,6 +262,10 @@ class Baseline:
         for item in result["issues"]:
             if item["evidence"] and item["evidence"] not in text:
                 item.update(evidence=None, blocking=True, code="EVIDENCE_MISMATCH")
+        conflicts = calendar_conflicts(text, reference_date)
+        if conflicts:
+            result["event"]["date_start"] = None
+            result["issues"].extend(conflicts)
         result["issues"] = check_event(result["event"], reference_date, result["issues"])
         result["usage"] = usage
         return result

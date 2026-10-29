@@ -1,7 +1,7 @@
 import json
 import pytest
 import httpx
-from ml.models.baseline import Baseline, ModelError, apply_changes, check_event, zero_usage
+from ml.models.baseline import Baseline, ModelError, apply_changes, check_event, zero_usage, calendar_conflicts
 from ml.contracts import EXTRACTION
 
 EVENT = dict(title="Встреча", description="Обсуждение", date_start="2026-11-20", date_end=None,
@@ -66,3 +66,9 @@ def test_zero_is_known_price_and_calendar_checks():
     assert check_event(EVENT | {"price": 0}, "2026-10-29") == []
     codes = {x["code"] for x in check_event(EVENT | {"date_end": "2026-10-01"}, "2026-11-25")}
     assert {"PAST_DATE", "END_BEFORE_START"} <= codes
+
+
+def test_explicit_weekday_conflict_does_not_change_year():
+    assert calendar_conflicts("25 ноября 2026, вторник", "2026-10-29")[0]["code"] == "DATE_CONFLICT"
+    assert calendar_conflicts("25 ноября, вторник", "2026-10-29")[0]["code"] == "DATE_CONFLICT"
+    assert calendar_conflicts("25 ноября 2026, среда", "2026-10-29") == []
