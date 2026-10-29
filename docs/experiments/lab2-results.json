@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "reference_date": "2026-10-14",
+    "model_calls": 0,
+    "api_cost_rub": 0,
+    "date_cases": 6,
+    "patch_cases": 5,
+    "status": "offline_spikes_passed"
+  },
+  "dates": [
+    {
+      "case": "ok",
+      "shape_ok": true,
+      "issues": []
+    },
+    {
+      "case": "weekday_conflict",
+      "shape_ok": true,
+      "issues": [
+        "DATE_CONFLICT"
+      ]
+    },
+    {
+      "case": "past_year",
+      "shape_ok": true,
+      "issues": [
+        "PAST_DATE"
+      ]
+    },
+    {
+      "case": "invalid_calendar",
+      "shape_ok": true,
+      "issues": [
+        "INVALID_DATE"
+      ]
+    },
+    {
+      "case": "end_before_start",
+      "shape_ok": true,
+      "issues": [
+        "END_BEFORE_START"
+      ]
+    },
+    {
+      "case": "missing_date",
+      "shape_ok": true,
+      "issues": [
+        "MISSING_DATE"
+      ]
+    }
+  ],
+  "patches": [
+    {
+      "case": "move_only",
+      "result": {
+        "date_start": "2026-11-16",
+        "time_start": "15:00",
+        "venue": "Точка, Пушкина 12",
+        "price": 2500,
+        "price_discount": 2000
+      }
+    },
+    {
+      "case": "explicit_clear_discount",
+      "result": {
+        "date_start": "2026-11-15",
+        "time_start": "19:00",
+        "venue": "Точка, Пушкина 12",
+        "price": 2500,
+        "price_discount": null
+      }
+    },
+    {
+      "case": "set_null_is_not_clear",
+      "blocked": "INVALID_VALUE"
+    },
+    {
+      "case": "stale_version",
+      "blocked": "VERSION_CONFLICT"
+    },
+    {
+      "case": "duplicate_field",
+      "blocked": "INVALID_FIELD"
+    }
+  ]
+}

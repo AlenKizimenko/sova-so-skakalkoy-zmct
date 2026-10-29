@@ -1,0 +1,56 @@
+@startuml use-cases
+title Сова со скакалкой — use cases первой версии
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actorStyle awesome
+
+actor "Эксперт" as Expert
+actor "Участник" as Guest
+
+actor "ВКонтакте" as VK
+actor "Сервис рассылки" as Mail
+
+rectangle "Система «Сова со скакалкой»" {
+
+  usecase "UC-01\nСобрать и опубликовать\nкомплект анонсов" as UC01
+  usecase "UC-02\nОбновить время\nили место" as UC02
+  usecase "UC-03\nИсправить текст\nпосле публикации" as UC03
+  usecase "UC-04\nОткрыть страницу\nи записаться" as UC04
+
+  usecase "Проверить извлечённые\nполя в предпросмотре" as Check
+  usecase "Применить изменения\nво все каналы" as Apply
+  usecase "Уведомить подписчиков\nоб изменении" as Notify
+}
+
+Expert --> UC01
+Expert --> UC02
+Expert --> UC03
+Guest  --> UC04
+
+UC01 ..> Check : <<include>>
+UC02 ..> Apply : <<include>>
+UC03 ..> Apply : <<include>>
+UC02 ..> Notify : <<extend>>
+
+UC01 --> VK
+UC01 --> Mail
+Apply --> VK
+Notify --> Mail
+
+UC04 ..> UC02 : страница показывает\nактуальные значения
+
+note bottom of UC04
+  Заявка передаётся эксперту.
+  Дальнейшая работа с участниками —
+  вне первой версии (см. roadmap).
+end note
+
+note right of UC02
+  Самая подтверждённая боль:
+  описана независимо двумя
+  респондентами из трёх.
+end note
+
+@enduml

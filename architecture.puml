@@ -1,0 +1,24 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+' Starter architecture. Replace with your own.
+'
+' Two things are shown side by side:
+'  1. `orders_repo` has no `$tags="repo"` but is auto-detected as a
+'     repository by its `_repo` suffix. The defaults match the picomatch
+'     glob `*_{repo,repository,storage,dao,store}` (brace expansion,
+'     case-insensitive — same shape as a grep alternation). Override the
+'     list per-project via `rules.crud.repoNamePatterns` in aact.config.ts.
+'  2. `orders` reaches into `orders_db` directly — that's the intentional
+'     crud violation `aact check` flags. `aact check --fix` rewires it
+'     through the existing `orders_repo` (no duplicate container created).
+
+System_Boundary(checkout, "Checkout") {
+  Container(orders, "Orders Service")
+  Container(orders_repo, "Orders Repo", "PostgreSQL driver")
+  ContainerDb(orders_db, "Orders DB")
+}
+
+Rel(orders_repo, orders_db, "PostgreSQL")
+Rel(orders, orders_db, "PostgreSQL")
+@enduml
