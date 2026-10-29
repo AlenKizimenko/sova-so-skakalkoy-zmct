@@ -231,6 +231,8 @@ class Baseline:
             data = response.json()
             if "prompt_eval_count" not in data or "eval_count" not in data:
                 raise ModelError("UNKNOWN_USAGE")
+            if not isinstance(data.get("message"), dict) or not isinstance(data["message"].get("content"), str):
+                raise ModelError("INVALID_PROVIDER_RESPONSE", True)
             usage = zero_usage()
             usage.update(input_tokens=data["prompt_eval_count"], output_tokens=data["eval_count"],
                          model_ids=[self.model], attempts=1, price_version="local-token-fee-zero-not-total-cost")
@@ -274,6 +276,8 @@ class Baseline:
     async def patch(self, event, text, reference_date, timezone):
         ZoneInfo(timezone)
         date.fromisoformat(reference_date)
+        if not text.strip() or len(text) > 12000:
+            raise ValueError("text must contain 1..12000 characters")
         result, usage = await self.call("patch", PATCH_PROMPT,
             dict(event=event, text=text, reference_date=reference_date, timezone=timezone), PATCH)
         try:
