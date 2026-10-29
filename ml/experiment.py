@@ -78,9 +78,9 @@ async def run(args):
         generate=args.generate, records=len(results), prompt_version="lab3-v1", rag=False,
         search_metrics=None, search_reason="No retrieval in the pipeline",
         timestamp=datetime.now(timezone.utc).isoformat(),
-        revision=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+        revision=subprocess.check_output(["git", "-c", f"safe.directory={Path.cwd().resolve().as_posix()}", "rev-parse", "HEAD"], text=True).strip(),
         timeout_seconds=model.timeout, deadline_seconds=model.deadline, runtime=runtime,
-        working_tree_dirty=bool(subprocess.check_output(["git", "status", "--porcelain"], text=True).strip()),
+        working_tree_dirty=bool(subprocess.check_output(["git", "-c", f"safe.directory={Path.cwd().resolve().as_posix()}", "status", "--porcelain"], text=True).strip()),
         baseline_source_sha256=hashlib.sha256(Path("ml/models/baseline.py").read_bytes()).hexdigest())
     (out / "run.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
     return results

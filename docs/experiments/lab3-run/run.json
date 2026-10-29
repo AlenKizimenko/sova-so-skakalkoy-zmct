@@ -1,0 +1,54 @@
+{
+  "dataset": "docs/golden-dataset/v1.jsonl",
+  "dataset_sha256": "ca18ebfff1db6c9f02cf0a8203abb7b8a645f86e8a785a518019616819a635a0",
+  "model": "qwen2.5:3b",
+  "provider": "ollama",
+  "repeats": 1,
+  "split": "dev",
+  "generate": true,
+  "records": 6,
+  "prompt_version": "lab3-v1",
+  "rag": false,
+  "search_metrics": null,
+  "search_reason": "No retrieval in the pipeline",
+  "timestamp": "2026-10-29T13:20:48.277368+00:00",
+  "revision": "758f78316586565e6e640396b160a5761295c234",
+  "timeout_seconds": 120,
+  "deadline_seconds": 245,
+  "runtime": {
+    "version": {
+      "version": "0.40.13"
+    },
+    "models": {
+      "models": [
+        {
+          "name": "qwen2.5:3b",
+          "model": "qwen2.5:3b",
+          "modified_at": "2026-10-29T16:18:48.2646852+03:00",
+          "size": 1929912432,
+          "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "3.1B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 32768,
+            "embedding_length": 2048,
+            "runner": "ggml"
+          },
+          "capabilities": [
+            "completion",
+            "tools"
+          ]
+        }
+      ]
+    }
+  },
+  "working_tree_dirty": true,
+  "baseline_source_sha256": "4b6f48feaad5d1a139099ca30991e1a468b4e7cf79442432ffb359d795c4ad1c",
+  "metadata_recovery": "Only Git metadata export failed after all 6 requests and CSV had been saved. Recovered without any repeated model calls."
+}
