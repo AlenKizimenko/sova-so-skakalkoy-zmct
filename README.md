@@ -41,10 +41,11 @@ FastAPI, Structured Outputs, ограниченные повторы и OpenTele
 ## Стек
 
 - **Backend:** Python, FastAPI
-- **Frontend:** JavaScript-фреймворк (выбор в процессе)
+- **Frontend:** Next.js, React, Tailwind CSS, shadcn/ui (прототип)
 - **База данных:** PostgreSQL 16
+- **Кеш и очередь:** Redis 7
 - **ИИ:** LLM API
-- **Инфраструктура:** Docker, Docker Compose
+- **Инфраструктура:** Docker, Docker Compose, Nginx (API Gateway)
 - **CI:** GitHub Actions
 
 ---
@@ -71,7 +72,83 @@ docker compose up -d
 docker compose down
 ```
 
-Удалить данные БД: `docker compose down -v`.
+Удалить данные БД и Redis: `docker compose down -v`.
+
+---
+
+## Архитектура
+
+### C4-диаграммы
+
+Проект описан по методологии **C4** в PlantUML:
+
+- [docs/architecture/context.puml](docs/architecture/context.puml) — Context-диаграмма (L1): роли, система, внешние сервисы.
+- [docs/architecture/container.puml](docs/architecture/container.puml) — Container-диаграмма (L2): сервисы, БД, Gateway, ACL и Repo-слои.
+- [docs/architecture/erd.puml](docs/architecture/erd.puml) — ERD: сущности БД и связи.
+
+Смотреть: [plantuml.com/plantuml/uml](https://www.plantuml.com/plantuml/uml/) — вставить содержимое `.puml`.
+
+### ADR (Architecture Decision Records)
+
+| № | Решение | Файл |
+|---|---|---|
+| 001 | PostgreSQL как база данных | [docs/adr/001-postgresql.md](docs/adr/001-postgresql.md) |
+| 002 | Микросервисная архитектура | [docs/adr/002-microservices.md](docs/adr/002-microservices.md) |
+| 003 | Docker Compose для dev | [docs/adr/003-docker-compose.md](docs/adr/003-docker-compose.md) |
+| 004 | PlantUML + C4 для диаграмм | [docs/adr/004-plantuml-c4.md](docs/adr/004-plantuml-c4.md) |
+| 005 | AACT для контроля архитектуры | [docs/adr/005-aact.md](docs/adr/005-aact.md) |
+
+### AACT — контроль архитектуры
+
+В проекте настроен **AACT** — проверка архитектурных правил из диаграммы.
+
+```bash
+npx -y aact check
+```
+
+Ожидаемый результат: **0 violations**.
+
+Конфиг: [aact.config.ts](aact.config.ts).
+
+---
+
+## Прототип UI
+
+Ключевые экраны сгенерированы агентом **v0** и лежат в репозитории как код:
+
+[`frontend/prototype/`](frontend/prototype/)
+
+| Экран | Скриншот |
+|---|---|
+| Форма ввода анонса | [announcement.png](frontend/prototype/screenshots/announcement.png) |
+| Дашборд эксперта | [events.png](frontend/prototype/screenshots/events.png) |
+| Публичная страница мероприятия | [event.png](frontend/prototype/screenshots/event.png) |
+| Форма регистрации | [register.png](frontend/prototype/screenshots/register.png) |
+| Личный кабинет эксперта | [profile.png](frontend/prototype/screenshots/profile.png) |
+
+**Стек:** Next.js, React, Tailwind CSS, shadcn/ui.
+
+Подробнее: [frontend/prototype/README_PROTOTYPE.md](frontend/prototype/README_PROTOTYPE.md).
+
+---
+
+## Схема данных
+
+Схема БД описана в SQL и ERD:
+
+- [database/schema.sql](database/schema.sql) — полная схема (актуальная версия).
+- [database/migrations/001_initial.sql](database/migrations/001_initial.sql) — первая миграция.
+- [docs/architecture/erd.puml](docs/architecture/erd.puml) — ERD в PlantUML.
+
+**Таблицы:**
+
+| Таблица | Назначение |
+|---|---|
+| `experts` | Эксперты платформы |
+| `events` | Мероприятия |
+| `pages` | Собранные страницы мероприятий |
+| `publications` | Публикации (VK, email, site) |
+| `subscribers` | Регистрации на мероприятия |
 
 ---
 
@@ -82,47 +159,81 @@ event-platform/
 ├── apps/
 │   └── site/                    # Фронтенд
 │       ├── public/              # Статика (index.html)
-│       └── src/                 # Исходники
-│           ├── api/             # Клиент к backend-сервисам
-│           ├── components/      # Переиспользуемые компоненты
-│           ├── hooks/           # React-хуки
-│           ├── pages/           # Страницы (дашборд, страница мероприятия)
-│           ├── renderer/        # Рендер блоков страницы
-│           └── styles/          # Стили
+│       └── src/
+│           ├── api/
+│           ├── components/
+│           ├── hooks/
+│           ├── pages/
+│           ├── renderer/
+│           └── styles/
 │
 ├── services/                    # Backend-сервисы
-│   ├── extractor/               # Извлечение даты/места/цены из анонса
+│   ├── extractor/               # Извлечение даты/места/цены
 │   ├── page-composer/           # Сборка страницы из блоков
-│   ├── vk-publisher/            # Публикация поста в VK
+│   ├── vk-publisher/            # Публикация в VK
 │   └── mailer/                  # Email-рассылка
 │
 ├── libs/
-│   └── shared-types/            # Общие типы данных (Event, Block)
+│   └── shared-types/            # Общие типы (Event, Block)
+│
+├── frontend/                    # Прототип UI
+│   └── prototype/               # Next.js-прототип (v0)
+│       ├── app/                 # Страницы (expert, public)
+│       ├── components/          # Компоненты экранов
+│       ├── lib/                 # Утилиты
+│       ├── public/              # Статика прототипа
+│       └── screenshots/         # Скриншоты экранов
+│
+├── database/                    # Схема БД
+│   ├── schema.sql
+│   └── migrations/
+│       └── 001_initial.sql
 │
 ├── docs/
-│   ├── deploy.md                # Инструкция по деплою
-│   ├── onboarding.md            # Гайд для новых участников
-│   ├── research.md              # Исследование: проблема, аудитория, аналоги
-│   ├── model-candidates.md      # Сравнение LLM-моделей и инфраструктуры
-│   └── experiments/             # Эксперименты и отчёты
-│       ├── lab1.md
-│       ├── lab1-experiments.ipynb
-│       ├── examples.md
-│       └── prompts.md
+│   ├── architecture/            # C4-диаграммы
+│   │   ├── context.puml
+│   │   ├── container.puml
+│   │   └── erd.puml
+│   ├── adr/                     # Architecture Decision Records
+│   │   ├── 001-postgresql.md
+│   │   ├── 002-microservices.md
+│   │   ├── 003-docker-compose.md
+│   │   ├── 004-plantuml-c4.md
+│   │   └── 005-aact.md
+│   ├── experiments/             # Эксперименты и отчёты
+│   │   ├── lab1.md
+│   │   ├── lab1-experiments.ipynb
+│   │   ├── examples.md
+│   │   └── prompts.md
+│   ├── quality/                 # Quality & Safety
+│   │   ├── dod-draft.md
+│   │   ├── golden-dataset-plan.md
+│   │   ├── success-criteria.md
+│   │   └── v0.1-draft.jsonl
+│   ├── brief.md
+│   ├── deploy.md
+│   ├── glossary.md
+│   ├── hypotheses.md
+│   ├── insights.md
+│   ├── model-candidates.md
+│   ├── onboarding.md
+│   ├── prd.md
+│   └── research.md
 │
 ├── scripts/                     # Вспомогательные скрипты
 │
 ├── .github/
-│   ├── ISSUE_TEMPLATE/          # Шаблоны issue
-│   ├── workflows/ci.yml         # CI: линт, проверки, тесты
-│   └── PULL_REQUEST_TEMPLATE.md # Шаблон PR
+│   ├── ISSUE_TEMPLATE/
+│   ├── workflows/ci.yml
+│   └── PULL_REQUEST_TEMPLATE.md
 │
-├── .env.example                 # Шаблон переменных окружения
+├── .env.example
 ├── .gitignore
+├── aact.config.ts               # Конфиг AACT
 ├── compose.yml                  # Default entrypoint (include → compose.dev.yml)
 ├── compose.dev.yml              # Docker Compose для dev-среды
-├── Dockerfile                   # Сборка статики (Nginx)
-├── CONTRIBUTING.md              # Правила веток и PR
+├── Dockerfile
+├── CONTRIBUTING.md
 └── README.md
 ```
 
@@ -172,11 +283,11 @@ event-platform/
 - [x] Dev-окружение (Docker Compose)
 - [x] CI-скелет
 - [x] Hello-world в прод
-- [ ] C4-диаграммы и ADR
-- [ ] AACT-конфиг
-- [ ] Прототип UI
-- [ ] Схема данных (ERD + schema.sql)
-- [ ] Compose-скелет v2
+- [x] C4-диаграммы и ADR
+- [x] AACT-конфиг
+- [x] Прототип UI
+- [x] Схема данных (ERD + schema.sql)
+- [x] Compose-скелет v2
 - [ ] Реализация сервисов
 
 ---
