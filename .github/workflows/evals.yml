@@ -1,0 +1,71 @@
+name: Baseline evals
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/quality_lab3]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      LLM_PROVIDER: ollama
+      LLM_MODEL: qwen2.5:3b
+      AI_CALL_TIMEOUT: '180'
+      AI_DEADLINE: '365'
+      AI_TRACE_CONTENT: 'false'
+      OLLAMA_HOST: 127.0.0.1:11434
+      OLLAMA_MODELS: /home/runner/.cache/sova-ollama-models
+      OLLAMA_NUM_PARALLEL: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-ai.txt
+      - run: pip install -r requirements-ai.txt
+      - name: Unit and integration tests
+        run: python -m pytest -q
+      - uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/sova-ollama-models
+          key: ollama-qwen25-3b-lab3-v1
+      - name: Install pinned Ollama and start loopback server
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ollama"
+          curl --fail --location --retry 3 https://github.com/ollama/ollama/releases/download/v0.40.13/ollama-linux-amd64.tar.zst -o "$RUNNER_TEMP/ollama.tar.zst"
+          tar --zstd -xf "$RUNNER_TEMP/ollama.tar.zst" -C "$RUNNER_TEMP/ollama"
+          echo "$RUNNER_TEMP/ollama/bin" >> "$GITHUB_PATH"
+          nohup "$RUNNER_TEMP/ollama/bin/ollama" serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:11434/api/version; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+      - name: Pull real local model
+        run: ollama pull qwen2.5:3b
+      - name: Verify exact baseline weights
+        run: python -m tests.evals.verify_model
+      - name: Real mini eval with enforced thresholds
+        run: python -m tests.evals.run --dataset docs/quality/golden-dataset/ci.jsonl --split dev --repeats 1 --generate --gate tests/evals/thresholds.json --output eval-artifacts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: baseline-evals-${{ github.run_id }}
+          path: |
+            eval-artifacts/
+            logs/llm-traces.jsonl
+          retention-days: 14
