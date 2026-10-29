@@ -82,7 +82,7 @@ def check_event(event, reference_date, issues=()):
     validate("Event", event)
     result = list(issues)
     for field in ("title", "description", "date_start", "time_start", "venue", "price", "registration"):
-        if event[field] is None or event[field] == "":
+        if event[field] is None or (isinstance(event[field], str) and not event[field].strip()):
             result.append(issue("MISSING_FIELD", field, f"Уточните {field}"))
     if event["date_start"] and event["date_start"] < reference_date:
         result.append(issue("PAST_DATE", "date_start", "Подтвердите будущую дату мероприятия"))
@@ -132,7 +132,7 @@ def render(event, platform, intro=""):
     def safe(value):
         return re.sub(r"([\\`*_{}\[\]<>])", r"\\\1", str(value or "").replace("\r", " ").replace("\n", " "))
     title = safe(event["title"])
-    lines = [intro, f"Дата: {event['date_start']}", f"Время: {event['time_start']}",
+    lines = [safe(intro), f"Дата: {event['date_start']}", f"Время: {event['time_start']}",
              f"Место: {safe(event['venue'])}", f"Стоимость: {event['price']} RUB"]
     if event["date_end"]:
         lines.append(f"До: {event['date_end']}")
