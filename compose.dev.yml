@@ -59,6 +59,7 @@ services:
       context: ./services/extractor
       dockerfile: Dockerfile
     container_name: event_platform_extractor
+    restart: unless-stopped
     ports:
       - "8001:8000"
     environment:
@@ -80,6 +81,7 @@ services:
       context: ./services/vk-publisher
       dockerfile: Dockerfile
     container_name: event_platform_vk_publisher
+    restart: unless-stopped
     ports:
       - "8003:8000"
     env_file:
@@ -99,6 +101,7 @@ services:
       context: ./services/mailer
       dockerfile: Dockerfile
     container_name: event_platform_mailer
+    restart: unless-stopped
     ports:
       - "8004:8000"
     env_file:
@@ -118,6 +121,7 @@ services:
       context: ./services/page-composer
       dockerfile: Dockerfile
     container_name: event_platform_page_composer
+    restart: unless-stopped
     ports:
       - "8002:8000"
     env_file:
@@ -137,8 +141,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: event_platform_site
+    restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:8000:3000"
     environment:
       NEXT_PUBLIC_EXTRACTOR_URL: http://extractor:8000
       NEXT_PUBLIC_COMPOSER_URL: http://page-composer:8000
