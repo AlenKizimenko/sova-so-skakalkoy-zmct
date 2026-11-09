@@ -143,7 +143,7 @@ services:
     container_name: event_platform_site
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8000:3000"
+      - "127.0.0.1:8010:3000"
     environment:
       NEXT_PUBLIC_EXTRACTOR_URL: http://extractor:8000
       NEXT_PUBLIC_COMPOSER_URL: http://page-composer:8000
