@@ -39,6 +39,7 @@ export function AnnouncementForm() {
           </Label>
           <Textarea
             id="announcement"
+            maxLength={1500}
             value={text}
             onChange={(event) => setText(event.target.value)}
             placeholder="В субботу в 19:00 встречаемся в кафе на Невском. Стоимость 2500₽, для своих 2000₽"
@@ -46,7 +47,7 @@ export function AnnouncementForm() {
             className="min-h-56 resize-y p-4 text-base leading-relaxed md:text-base"
           />
           <p id="announcement-hint" className="text-sm text-muted-foreground">
-            Напишите анонс в свободной форме — система сама извлечёт дату, место и цену
+            До 1500 символов. Система извлечёт дату, место и цену. Первый запрос может занять несколько минут.
           </p>
         </div>
 

@@ -1,4 +1,36 @@
 services:
+  # Local inference: model must be pulled once; see docs/experiments/delivery-ollama.md.
+  ollama:
+    image: ollama/ollama:0.40.13
+    restart: unless-stopped
+    mem_limit: 2g
+    cpus: 2.0
+    ports:
+      - "11434:11434"
+    environment:
+      OLLAMA_HOST: "0.0.0.0:11434"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_MAX_QUEUE: "2"
+      OLLAMA_KEEP_ALIVE: "0"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - backend-net
+    entrypoint: >
+      sh -c "
+      ollama serve &
+      sleep 10 &&
+      ollama pull qwen2.5:1.5b &&
+      wait
+      "
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 300s
+
   # === База данных ===
   db:
     image: postgres:16-alpine
@@ -63,6 +95,8 @@ services:
     ports:
       - "8001:8000"
     environment:
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      LLM_MODEL: ${LLM_MODEL:-qwen2.5:1.5b}
       DATABASE_URL: postgresql://event_platform:changeme@db:5432/event_platform
     env_file:
       - path: .env
@@ -70,6 +104,8 @@ services:
     networks:
       - backend-net
     depends_on:
+      ollama:
+        condition: service_healthy
       db:
         condition: service_healthy
       redis:
@@ -145,10 +181,11 @@ services:
     ports:
       - "127.0.0.1:8010:3000"
     environment:
-      NEXT_PUBLIC_EXTRACTOR_URL: http://extractor:8000
-      NEXT_PUBLIC_COMPOSER_URL: http://page-composer:8000
+      EXTRACTOR_URL: http://extractor:8000
+      COMPOSER_URL: http://page-composer:8000
     networks:
       - frontend-net
+      - backend-net
     depends_on:
       - extractor
       - page-composer
@@ -162,3 +199,4 @@ networks:
 volumes:
   db_data:
   redis_data:
+  ollama_data:

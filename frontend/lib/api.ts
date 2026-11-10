@@ -1,5 +1,5 @@
-const EXTRACTOR_URL = process.env.NEXT_PUBLIC_EXTRACTOR_URL ?? 'http://localhost:8001'
-const COMPOSER_URL = process.env.NEXT_PUBLIC_COMPOSER_URL ?? 'http://localhost:8002'
+const EXTRACTOR_URL = '/api/extractor'
+const COMPOSER_URL = '/api/composer'
 
 export type ExtractResponse = {
   title: string
