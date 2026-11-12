@@ -40,8 +40,8 @@ FastAPI, Structured Outputs, ограниченные повторы и OpenTele
 
 ## Стек
 
-- **Backend:** Python, FastAPI
-- **Frontend:** Next.js, React, Tailwind CSS, shadcn/ui (прототип)
+- **Backend:** Python 3.12, FastAPI
+- **Frontend:** Next.js, React, Tailwind CSS, shadcn/ui
 - **База данных:** PostgreSQL 16
 - **Кеш и очередь:** Redis 7
 - **ИИ:** LLM API
@@ -63,8 +63,18 @@ FastAPI, Structured Outputs, ограниченные повторы и OpenTele
 ```bash
 git clone https://github.com/vstu-sii/sova-so-skakalkoy-zmct.git
 cd sova-so-skakalkoy-zmct
-docker compose up -d
+cp .env.example .env
+docker compose up -d --build
 ```
+
+### Миграция БД
+
+```bash
+Get-Content database\migrations\001_initial.sql | docker compose exec -T db psql -U event_platform -d event_platform
+```
+
+Фронтенд: http://localhost:3000
+Extractor API: http://localhost:8001/docs
 
 ### Остановка
 
@@ -126,8 +136,6 @@ npx -y aact check
 | Форма регистрации | [register.png](frontend/prototype/screenshots/register.png) |
 | Личный кабинет эксперта | [profile.png](frontend/prototype/screenshots/profile.png) |
 
-**Стек:** Next.js, React, Tailwind CSS, shadcn/ui.
-
 Подробнее: [frontend/prototype/README_PROTOTYPE.md](frontend/prototype/README_PROTOTYPE.md).
 
 ---
@@ -156,71 +164,40 @@ npx -y aact check
 
 ```text
 event-platform/
-├── apps/
-│   └── site/                    # Фронтенд
-│       ├── public/              # Статика (index.html)
-│       └── src/
-│           ├── api/
-│           ├── components/
-│           ├── hooks/
-│           ├── pages/
-│           ├── renderer/
-│           └── styles/
-│
 ├── services/                    # Backend-сервисы
-│   ├── extractor/               # Извлечение даты/места/цены
-│   ├── page-composer/           # Сборка страницы из блоков
-│   ├── vk-publisher/            # Публикация в VK
-│   └── mailer/                  # Email-рассылка
+│   ├── extractor/
+│   │   ├── main.py
+│   │   ├── database.py
+│   │   ├── requirements.txt
+│   │   ├── Dockerfile
+│   │   └── models/
+│   ├── page-composer/
+│   ├── vk-publisher/
+│   └── mailer/
 │
-├── libs/
-│   └── shared-types/            # Общие типы (Event, Block)
+├── frontend/                    # Фронтенд (Next.js)
+│   ├── app/
+│   ├── components/
+│   ├── lib/
+│   ├── public/
+│   ├── prototype/               # Прототип из лабы 2
+│   ├── Dockerfile
+│   └── package.json
 │
-├── frontend/                    # Прототип UI
-│   └── prototype/               # Next.js-прототип (v0)
-│       ├── app/                 # Страницы (expert, public)
-│       ├── components/          # Компоненты экранов
-│       ├── lib/                 # Утилиты
-│       ├── public/              # Статика прототипа
-│       └── screenshots/         # Скриншоты экранов
-│
-├── database/                    # Схема БД
+├── database/
 │   ├── schema.sql
+│   ├── erd.puml
 │   └── migrations/
 │       └── 001_initial.sql
 │
 ├── docs/
-│   ├── architecture/            # C4-диаграммы
-│   │   ├── context.puml
-│   │   ├── container.puml
-│   │   └── erd.puml
-│   ├── adr/                     # Architecture Decision Records
-│   │   ├── 001-postgresql.md
-│   │   ├── 002-microservices.md
-│   │   ├── 003-docker-compose.md
-│   │   ├── 004-plantuml-c4.md
-│   │   └── 005-aact.md
-│   ├── experiments/             # Эксперименты и отчёты
-│   │   ├── lab1.md
-│   │   ├── lab1-experiments.ipynb
-│   │   ├── examples.md
-│   │   └── prompts.md
-│   ├── quality/                 # Quality & Safety
-│   │   ├── dod-draft.md
-│   │   ├── golden-dataset-plan.md
-│   │   ├── success-criteria.md
-│   │   └── v0.1-draft.jsonl
-│   ├── brief.md
+│   ├── architecture/
+│   ├── adr/
+│   ├── experiments/
+│   ├── quality/
+│   ├── agent-workflow.md
 │   ├── deploy.md
-│   ├── glossary.md
-│   ├── hypotheses.md
-│   ├── insights.md
-│   ├── model-candidates.md
-│   ├── onboarding.md
-│   ├── prd.md
-│   └── research.md
-│
-├── scripts/                     # Вспомогательные скрипты
+│   └── onboarding.md
 │
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
@@ -229,10 +206,9 @@ event-platform/
 │
 ├── .env.example
 ├── .gitignore
-├── aact.config.ts               # Конфиг AACT
-├── compose.yml                  # Default entrypoint (include → compose.dev.yml)
-├── compose.dev.yml              # Docker Compose для dev-среды
-├── Dockerfile
+├── aact.config.ts
+├── compose.dev.yml
+├── compose.yml
 ├── CONTRIBUTING.md
 └── README.md
 ```
@@ -241,22 +217,10 @@ event-platform/
 
 ## Документация
 
-### Инфраструктура и правила
-
 - [docs/deploy.md](docs/deploy.md) — инструкция по деплою
 - [docs/onboarding.md](docs/onboarding.md) — гайд для новых участников
+- [docs/agent-workflow.md](docs/agent-workflow.md) — отчёт агентной разработки
 - [CONTRIBUTING.md](CONTRIBUTING.md) — правила веток и PR
-
-### Исследование
-
-| Материал | Содержание |
-| --- | --- |
-| [docs/research.md](docs/research.md) | Проблема, аудитория, аналоги, подходы и ограничения |
-| [docs/model-candidates.md](docs/model-candidates.md) | Сравнение моделей, оценка токен-бюджета и варианты инфраструктуры |
-| [docs/experiments/lab1.md](docs/experiments/lab1.md) | Методология, примеры ответов, ограничения и предварительные выводы |
-| [docs/experiments/lab1-experiments.ipynb](docs/experiments/lab1-experiments.ipynb) | Код пробных API-вызовов и расчёт задержки и стоимости |
-| [docs/experiments/examples.md](docs/experiments/examples.md) | Четыре сценария для проверки |
-| [docs/experiments/prompts.md](docs/experiments/prompts.md) | Шаблоны извлечения данных и генерации текстов |
 
 ---
 
@@ -273,7 +237,14 @@ event-platform/
 
 ## Демо
 
-Прод: https://event-platform-tanoss.amvera.io
+Прод: https://tanya-lab.88-87-92-145.sslip.io/
+
+Локально:
+```bash
+docker compose up -d --build
+```
+Фронтенд: http://localhost:3000
+Extractor API: http://localhost:8001/docs
 
 ---
 
@@ -288,7 +259,10 @@ event-platform/
 - [x] Прототип UI
 - [x] Схема данных (ERD + schema.sql)
 - [x] Compose-скелет v2
-- [ ] Реализация сервисов
+- [x] Бэкенд и фронтенд (лаба 3)
+- [x] БД с миграциями (лаба 3)
+- [x] Compose всей системы (лаба 3)
+- [x] Публичный деплой (сервер tanya-lab)
 
 ---
 
