@@ -1,0 +1,27 @@
+{
+  "extraction_status": "needs_clarification",
+  "event_id": "63c1d59c-2340-4278-904c-061a64ed2666",
+  "usage": {
+    "input_tokens": 927,
+    "output_tokens": 246,
+    "cost_usd": 0.0,
+    "cost_rub": 0.0,
+    "fx_rate": 85.0,
+    "price_version": "local-token-fee-zero-not-total-cost",
+    "cache_hit": false,
+    "model_ids": [
+      "qwen2.5:3b"
+    ],
+    "attempts": 1
+  },
+  "issues": [
+    {
+      "code": "PAST_DATE",
+      "field": "date_start",
+      "message": "Дата лекции 2026-11-20 уже прошла",
+      "question": "Дата лекции 2026-11-20 уже прошла, верно?",
+      "evidence": "Дата: 20 ноября 2026, 18:00",
+      "blocking": true
+    }
+  ]
+}
