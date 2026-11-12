@@ -1,0 +1,187 @@
+{
+  "id": "gd-0001",
+  "requests": [
+    {
+      "mode": "uncached",
+      "latency_ms": 5058.76680000074,
+      "event": {
+        "title": "Ребята, в субботу в 19 разбираем тревогу у подростков",
+        "description": "Пространство «Точка», Пушкина 12. Стоимость 2500 ₽ (для своих 2000).",
+        "date_start": "2025-11-15",
+        "date_end": null,
+        "time_start": "19:00",
+        "venue": "Пространство «Точка», Пушкина 12",
+        "price": 2500,
+        "price_discount": 2000,
+        "registration": null
+      },
+      "issues": [
+        {
+          "code": "MISSING_FIELD",
+          "field": "date_end",
+          "message": "date_end не указано",
+          "question": "Укажите дату окончания мероприятия",
+          "evidence": null,
+          "blocking": true
+        },
+        {
+          "code": "MISSING_FIELD",
+          "field": "registration",
+          "message": "Уточните registration",
+          "question": "Уточните registration",
+          "evidence": null,
+          "blocking": true
+        }
+      ],
+      "usage": {
+        "input_tokens": 953,
+        "output_tokens": 237,
+        "cost_usd": 0.0,
+        "cost_rub": 0.0,
+        "fx_rate": 85.0,
+        "price_version": "local-token-fee-zero-not-total-cost",
+        "cache_hit": false,
+        "model_ids": [
+          "qwen2.5:3b"
+        ],
+        "attempts": 1
+      }
+    },
+    {
+      "mode": "uncached",
+      "latency_ms": 4845.02749999956,
+      "event": {
+        "title": "Ребята, в субботу в 19 разбираем тревогу у подростков",
+        "description": "Пространство «Точка», Пушкина 12. Стоимость 2500 ₽ (для своих 2000).",
+        "date_start": "2025-11-15",
+        "date_end": null,
+        "time_start": "19:00",
+        "venue": "Пространство «Точка», Пушкина 12",
+        "price": 2500,
+        "price_discount": 2000,
+        "registration": null
+      },
+      "issues": [
+        {
+          "code": "MISSING_FIELD",
+          "field": "date_end",
+          "message": "date_end не указано",
+          "question": "Укажите дату окончания мероприятия",
+          "evidence": null,
+          "blocking": true
+        },
+        {
+          "code": "MISSING_FIELD",
+          "field": "registration",
+          "message": "Уточните registration",
+          "question": "Уточните registration",
+          "evidence": null,
+          "blocking": true
+        }
+      ],
+      "usage": {
+        "input_tokens": 953,
+        "output_tokens": 237,
+        "cost_usd": 0.0,
+        "cost_rub": 0.0,
+        "fx_rate": 85.0,
+        "price_version": "local-token-fee-zero-not-total-cost",
+        "cache_hit": false,
+        "model_ids": [
+          "qwen2.5:3b"
+        ],
+        "attempts": 1
+      }
+    },
+    {
+      "mode": "cold",
+      "latency_ms": 4836.292899999535,
+      "event": {
+        "title": "Ребята, в субботу в 19 разбираем тревогу у подростков",
+        "description": "Пространство «Точка», Пушкина 12. Стоимость 2500 ₽ (для своих 2000).",
+        "date_start": "2025-11-15",
+        "date_end": null,
+        "time_start": "19:00",
+        "venue": "Пространство «Точка», Пушкина 12",
+        "price": 2500,
+        "price_discount": 2000,
+        "registration": null
+      },
+      "issues": [
+        {
+          "code": "MISSING_FIELD",
+          "field": "date_end",
+          "message": "date_end не указано",
+          "question": "Укажите дату окончания мероприятия",
+          "evidence": null,
+          "blocking": true
+        },
+        {
+          "code": "MISSING_FIELD",
+          "field": "registration",
+          "message": "Уточните registration",
+          "question": "Уточните registration",
+          "evidence": null,
+          "blocking": true
+        }
+      ],
+      "usage": {
+        "input_tokens": 953,
+        "output_tokens": 237,
+        "cost_usd": 0.0,
+        "cost_rub": 0.0,
+        "fx_rate": 85.0,
+        "price_version": "local-token-fee-zero-not-total-cost",
+        "cache_hit": false,
+        "model_ids": [
+          "qwen2.5:3b"
+        ],
+        "attempts": 1
+      }
+    },
+    {
+      "mode": "hit",
+      "latency_ms": 0.08099999831756577,
+      "event": {
+        "title": "Ребята, в субботу в 19 разбираем тревогу у подростков",
+        "description": "Пространство «Точка», Пушкина 12. Стоимость 2500 ₽ (для своих 2000).",
+        "date_start": "2025-11-15",
+        "date_end": null,
+        "time_start": "19:00",
+        "venue": "Пространство «Точка», Пушкина 12",
+        "price": 2500,
+        "price_discount": 2000,
+        "registration": null
+      },
+      "issues": [
+        {
+          "code": "MISSING_FIELD",
+          "field": "date_end",
+          "message": "date_end не указано",
+          "question": "Укажите дату окончания мероприятия",
+          "evidence": null,
+          "blocking": true
+        },
+        {
+          "code": "MISSING_FIELD",
+          "field": "registration",
+          "message": "Уточните registration",
+          "question": "Уточните registration",
+          "evidence": null,
+          "blocking": true
+        }
+      ],
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cost_usd": 0.0,
+        "cost_rub": 0.0,
+        "fx_rate": 85.0,
+        "price_version": "adr002-scenario-v1",
+        "cache_hit": true,
+        "model_ids": [],
+        "attempts": 0
+      }
+    }
+  ]
+}

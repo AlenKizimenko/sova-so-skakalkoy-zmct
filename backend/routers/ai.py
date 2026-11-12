@@ -132,7 +132,11 @@ async def mutation(request, schema_name, response_name, operation):
 @router.post("/v1/ai/extractions")
 async def extract(request: Request):
     async def operation(tenant, data, store):
-        result = await request.app.state.model.extract(**data)
+        cache = getattr(request.app.state, "extraction_cache", None)
+        if cache is None:
+            result = await request.app.state.model.extract(**data)
+        else:
+            result = await cache.extract(scope=tenant, **data)
         event_id = str(uuid4())
         proposal = candidate(result, 1)
         record = dict(event=result["event"], version=1, status="draft", candidate=proposal, created=time.time())

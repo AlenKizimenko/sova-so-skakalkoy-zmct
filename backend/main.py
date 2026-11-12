@@ -11,12 +11,19 @@ load_dotenv()
 from backend.routers.ai import router, ApiError, Store
 from ml.contracts import CONTRACT
 from ml.models.baseline import Baseline
+from ml.prompts_v2 import Candidate, ExtractionCache
 
 
 @asynccontextmanager
 async def lifespan(app):
     app.state.store = Store(os.getenv("AI_DB_PATH", "data/ai.sqlite"))
-    app.state.model = Baseline()
+    variant = os.getenv("AI_EXTRACTION_VARIANT", "baseline")
+    if variant not in {"baseline", "calendar"}:
+        raise ValueError("AI_EXTRACTION_VARIANT must be baseline or calendar")
+    app.state.model = Candidate(calendar=True) if variant == "calendar" else Baseline()
+    app.state.extraction_cache = (
+        ExtractionCache(app.state.model) if os.getenv("AI_EXTRACTION_CACHE") == "1" else None
+    )
     yield
     await app.state.model.close()
     app.state.store.db.close()

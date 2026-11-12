@@ -18,7 +18,7 @@ from ml.models.baseline import Baseline, ModelError, merge_usage
 from ml.tracing import tracer
 
 
-async def run(args):
+async def run(args, *, model_factory=Baseline, prompt_version="lab3-v1"):
     out = Path(args.output)
     out.mkdir(parents=True, exist_ok=True)
     source = Path(args.dataset)
@@ -29,7 +29,7 @@ async def run(args):
         rows = rows[:args.limit]
     if not rows:
         raise ValueError("empty dataset selection")
-    model = Baseline()
+    model = model_factory()
     runtime = {}
     if model.provider == "ollama":
         async with httpx.AsyncClient(base_url=os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")) as http:
@@ -44,7 +44,7 @@ async def run(args):
                     expected, fields = expected_projection(row)
                     result = dict(id=row["id"], repeat=repeat, expected=expected, assert_fields=fields,
                         tags=row.get("tags", []), split=row.get("split"), attack=row.get("attack"),
-                        status="error", usage_complete=False, model=model.model, prompt_version="lab3-v1")
+                        status="error", usage_complete=False, model=model.model, prompt_version=prompt_version)
                     with tracer.start_as_current_span("experiment-request"):
                         try:
                             extraction = await model.extract(**model_input(row))
@@ -60,6 +60,8 @@ async def run(args):
                             result.update(status="error", usage_complete=False, error_code=exc.code,
                                           failed_attempt_usage=exc.usage)
                         result["latency_ms"] = (time.perf_counter() - started) * 1000
+                    if getattr(model, "last_tool_result", None) is not None:
+                        result["calendar_tool"] = model.last_tool_result
                     stream.write(json.dumps(result, ensure_ascii=False) + "\n")
                     stream.flush()
                     results.append(result)
@@ -75,7 +77,7 @@ async def run(args):
             writer.writerow({k: r.get(k, (usage or {}).get(k)) for k in fields})
     metadata = dict(dataset=str(source), dataset_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
         model=model.model, provider=model.provider, repeats=args.repeats, split=args.split,
-        generate=args.generate, records=len(results), prompt_version="lab3-v1", rag=False,
+        generate=args.generate, records=len(results), prompt_version=prompt_version, rag=False,
         search_metrics=None, search_reason="No retrieval in the pipeline",
         timestamp=datetime.now(timezone.utc).isoformat(),
         revision=subprocess.check_output(["git", "-c", f"safe.directory={Path.cwd().resolve().as_posix()}", "rev-parse", "HEAD"], text=True).strip(),

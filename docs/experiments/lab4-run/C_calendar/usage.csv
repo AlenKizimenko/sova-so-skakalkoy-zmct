@@ -1,0 +1,7 @@
+id,repeat,status,usage_complete,latency_ms,input_tokens,output_tokens,cost_rub,attempts
+gd-0001,0,ok,True,5828.0201999950805,953,237,0.0,1
+gd-0003,0,ok,True,11123.580699997547,900,449,0.0,1
+gd-0005,0,ok,True,10516.34660000127,945,424,0.0,1
+gd-v2-001,0,ok,True,6438.942000000679,920,317,0.0,1
+gd-v2-004,0,ok,True,8088.792100003047,894,401,0.0,1
+ci-injection-001,0,ok,True,5601.3655999995535,921,275,0.0,1
