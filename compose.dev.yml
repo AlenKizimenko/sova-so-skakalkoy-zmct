@@ -1,4 +1,36 @@
 services:
+  # Local inference: model must be pulled once; see docs/experiments/delivery-ollama.md.
+  ollama:
+    image: ollama/ollama:0.40.13
+    restart: unless-stopped
+    mem_limit: 2g
+    cpus: 2.0
+    ports:
+      - "11434:11434"
+    environment:
+      OLLAMA_HOST: "0.0.0.0:11434"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_MAX_QUEUE: "2"
+      OLLAMA_KEEP_ALIVE: "0"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - backend-net
+    entrypoint: >
+      sh -c "
+      ollama serve &
+      sleep 10 &&
+      ollama pull qwen2.5:1.5b &&
+      wait
+      "
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 300s
+
   # === База данных ===
   db:
     image: postgres:16-alpine
@@ -12,6 +44,7 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+      - ./database/migrations/001_initial.sql:/docker-entrypoint-initdb.d/001_initial.sql:ro
     networks:
       - backend-net
     healthcheck:
@@ -53,27 +86,41 @@ services:
       - vk-publisher
       - mailer
 
-  # === Extractor (заглушка) ===
+  # === Extractor ===
   extractor:
-    image: alpine:3.19
+    build:
+      context: ./services/extractor
+      dockerfile: Dockerfile
     container_name: event_platform_extractor
-    command: sh -c "echo '[extractor] placeholder running' && sleep infinity"
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      LLM_MODEL: ${LLM_MODEL:-qwen2.5:1.5b}
+      DATABASE_URL: postgresql://event_platform:changeme@db:5432/event_platform
     env_file:
       - path: .env
         required: false
     networks:
       - backend-net
     depends_on:
+      ollama:
+        condition: service_healthy
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
 
-  # === VK Publisher (заглушка) ===
+  # === VK Publisher ===
   vk-publisher:
-    image: alpine:3.19
+    build:
+      context: ./services/vk-publisher
+      dockerfile: Dockerfile
     container_name: event_platform_vk_publisher
-    command: sh -c "echo '[vk-publisher] placeholder running' && sleep infinity"
+    restart: unless-stopped
+    ports:
+      - "8003:8000"
     env_file:
       - path: .env
         required: false
@@ -85,11 +132,15 @@ services:
       redis:
         condition: service_healthy
 
-  # === Mailer (заглушка) ===
+  # === Mailer ===
   mailer:
-    image: alpine:3.19
+    build:
+      context: ./services/mailer
+      dockerfile: Dockerfile
     container_name: event_platform_mailer
-    command: sh -c "echo '[mailer] placeholder running' && sleep infinity"
+    restart: unless-stopped
+    ports:
+      - "8004:8000"
     env_file:
       - path: .env
         required: false
@@ -101,11 +152,15 @@ services:
       redis:
         condition: service_healthy
 
-  # === Page Composer (заглушка) ===
+  # === Page Composer ===
   page-composer:
-    image: alpine:3.19
+    build:
+      context: ./services/page-composer
+      dockerfile: Dockerfile
     container_name: event_platform_page_composer
-    command: sh -c "echo '[page-composer] placeholder running' && sleep infinity"
+    restart: unless-stopped
+    ports:
+      - "8002:8000"
     env_file:
       - path: .env
         required: false
@@ -114,18 +169,27 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
 
-  # === Frontend (заглушка) ===
+  # === Frontend (Next.js) ===
   site:
-    image: nginx:alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: event_platform_site
     restart: unless-stopped
     ports:
-      - "8080:80"
-    volumes:
-      - ./apps/site/public:/usr/share/nginx/html:ro
+      - "127.0.0.1:8010:3000"
+    environment:
+      EXTRACTOR_URL: http://extractor:8000
+      COMPOSER_URL: http://page-composer:8000
     networks:
       - frontend-net
+      - backend-net
+    depends_on:
+      - extractor
+      - page-composer
 
 networks:
   frontend-net:
@@ -136,3 +200,4 @@ networks:
 volumes:
   db_data:
   redis_data:
+  ollama_data:

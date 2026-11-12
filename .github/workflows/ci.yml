@@ -24,7 +24,7 @@ jobs:
             [ -f "$f" ] || { echo "[FAIL] Missing file: $f"; exit 1; }
             echo "[OK] $f"
           done
-          for d in apps services libs docs .github; do
+          for d in services frontend database libs docs .github; do
             [ -d "$d" ] || { echo "[FAIL] Missing dir: $d/"; exit 1; }
             echo "[OK] $d/"
           done
